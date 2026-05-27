@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
@@ -19,7 +19,7 @@ const toSafeUser = (user: UserInstance): Omit<UserAttributes, "password"> => {
 };
 
 const sendServerError = (res: Response): void => {
-    res.status(500).json({ error: "?쒕쾭 ?먮윭媛 諛쒖깮?덉뒿?덈떎." });
+    res.status(500).json({ error: "서버 오류가 발생했습니다." });
 };
 
 const mailTransporter = nodemailer.createTransport({
@@ -35,7 +35,7 @@ const sendCode = async (req: Request, res: Response): Promise<void> => {
         const { email } = req.body as { email?: string };
 
         if (!email) {
-            res.status(400).json({ error: "?대찓?쇱쓣 ?낅젰?댁＜?몄슂." });
+            res.status(400).json({ error: "이메일을 입력해주세요." });
             return;
         }
 
@@ -47,11 +47,11 @@ const sendCode = async (req: Request, res: Response): Promise<void> => {
         await mailTransporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
-            subject: "?대찓???몄쬆 肄붾뱶",
-            text: `?몄쬆 肄붾뱶: ${code}`
+            subject: "이메일 인증 코드",
+            text: `인증 코드: ${code}`
         });
 
-        res.json({ message: "?몄쬆 肄붾뱶媛 ?꾩넚?섏뿀?듬땲??" });
+        res.json({ message: "인증 코드가 전송되었습니다." });
     } catch {
         sendServerError(res);
     }
@@ -62,7 +62,7 @@ const verifyCode = async (req: Request, res: Response): Promise<void> => {
         const { email, code } = req.body as { email?: string; code?: string };
 
         if (!email || !code) {
-            res.status(400).json({ error: "?대찓?쇨낵 ?몄쬆 肄붾뱶瑜??낅젰?댁＜?몄슂." });
+            res.status(400).json({ error: "이메일과 인증 코드를 입력해주세요." });
             return;
         }
 
@@ -71,11 +71,11 @@ const verifyCode = async (req: Request, res: Response): Promise<void> => {
         });
 
         if (!record) {
-            res.status(400).json({ error: "?몄쬆 肄붾뱶媛 ?쇱튂?섏? ?딆뒿?덈떎." });
+            res.status(400).json({ error: "인증 코드가 일치하지 않습니다." });
             return;
         }
 
-        res.json({ message: "?대찓???몄쬆???꾨즺?섏뿀?듬땲??" });
+        res.json({ message: "이메일 인증이 완료되었습니다." });
     } catch {
         sendServerError(res);
     }
@@ -92,7 +92,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
 
         if (!email || !password || !name || !code) {
             res.status(400).json({
-                error: "?대찓?? 鍮꾨?踰덊샇, ?대쫫, ?몄쬆 肄붾뱶瑜?紐⑤몢 ?낅젰?댁＜?몄슂."
+                error: "이메일, 비밀번호, 이름, 인증 코드를 입력해주세요."
             });
             return;
         }
@@ -102,14 +102,14 @@ const register = async (req: Request, res: Response): Promise<void> => {
         });
 
         if (!validCode) {
-            res.status(400).json({ error: "?대찓???몄쬆???꾩슂?⑸땲??" });
+            res.status(400).json({ error: "이메일 인증이 필요합니다." });
             return;
         }
 
         const existingUser = await User.findOne({ where: { email } });
 
         if (existingUser) {
-            res.status(409).json({ error: "?대? 媛?낅맂 ?대찓?쇱엯?덈떎." });
+            res.status(409).json({ error: "이미 가입된 이메일입니다." });
             return;
         }
 
@@ -123,7 +123,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
         await EmailCode.destroy({ where: { email } });
 
         res.status(201).json({
-            message: "?ъ슜??媛?낆씠 ?꾨즺?섏뿀?듬땲??",
+            message: "회원가입이 완료되었습니다.",
             user: toSafeUser(user)
         });
     } catch {
@@ -136,26 +136,26 @@ const login = async (req: Request, res: Response): Promise<void> => {
         const { email, password } = req.body as { email?: string; password?: string };
 
         if (!email || !password) {
-            res.status(400).json({ error: "?대찓?쇨낵 鍮꾨?踰덊샇瑜??낅젰?댁＜?몄슂." });
+            res.status(400).json({ error: "이메일과 비밀번호를 입력해주세요." });
             return;
         }
 
         const user = await User.findOne({ where: { email } });
 
         if (!user) {
-            res.status(401).json({ error: "?대찓???먮뒗 鍮꾨?踰덊샇媛 ?쇱튂?섏? ?딆뒿?덈떎." });
+            res.status(401).json({ error: "이메일 또는 비밀번호가 일치하지 않습니다." });
             return;
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            res.status(401).json({ error: "?대찓???먮뒗 鍮꾨?踰덊샇媛 ?쇱튂?섏? ?딆뒿?덈떎." });
+            res.status(401).json({ error: "이메일 또는 비밀번호가 일치하지 않습니다." });
             return;
         }
 
         res.json({
-            message: "濡쒓렇?몃릺?덉뒿?덈떎.",
+            message: "로그인되었습니다.",
             token: createToken(user),
             user: toSafeUser(user)
         });
@@ -170,7 +170,7 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
             where: { id: req.user!.id }
         });
 
-        res.json({ message: "?ъ슜????젣媛 ?꾨즺?섏뿀?듬땲??" });
+        res.json({ message: "사용자 삭제가 완료되었습니다." });
     } catch {
         sendServerError(res);
     }
